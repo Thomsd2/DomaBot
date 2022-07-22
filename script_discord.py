@@ -23,6 +23,7 @@ async def on_ready():
     ChannelID = 969714441400754186
     channel = bot.get_channel(ChannelID)
     await channel.send("Je suis ici!")
+    anniversaire.start()
 
 
 #   _____          _______  _____
