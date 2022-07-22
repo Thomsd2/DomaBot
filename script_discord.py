@@ -450,7 +450,7 @@ async def anniversaire():
 
 @anniversaire.before_loop
 async def before_anniversaire():
-    for didier in range(60*60*24):
+    for _ in range(60*60*24):
         if dt.datetime.now().hour == 0:
             print('Les anniversaires arrivent !')
             return
