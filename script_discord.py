@@ -1,9 +1,10 @@
 # Les imports
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import asyncio as a
 import random
 import os
+import datetime as dt
 
 
 # Le blabla du début
@@ -11,18 +12,6 @@ intents = discord.Intents.default()
 intents.members = True
 bot = commands.Bot(command_prefix="d!", intents=intents)
 # slash = SlashCommand(bot, sync_commands=True)
-bot.équipes = 0
-bot.tous_les_résultats = {}
-point_par_ligne = {
-    "RER D": 1.5,
-    "RER E": 2,
-    "T1": 1,
-    "T2": 1,
-    "T3A": 1,
-    "T3B": 1,
-    "T4": 2,
-    "T11": 2,
-}
 bot.channels = []
 
 # Début du code
@@ -43,6 +32,18 @@ async def on_ready():
 #  | | \ \  / ____ \ | |   | |
 #  |_|  \_\/_/    \_\|_|   |_|
 
+bot.équipes = 0
+bot.tous_les_résultats = {}
+point_par_ligne = {
+    "RER D": 1.5,
+    "RER E": 2,
+    "T1": 1,
+    "T2": 1,
+    "T3A": 1,
+    "T3B": 1,
+    "T4": 2,
+    "T11": 2,
+}
 
 # Nombre d'équipes
 @bot.command(name="r_équipes")
@@ -410,6 +411,49 @@ async def reset(ctx):
         await message_du_reset.delete()
         await arabe.delete()
 
+
+#   _____        _             _ _                   _                          _          
+#  |  __ \      | |           | ( )                 (_)                        (_)         
+#  | |  | | __ _| |_ ___    __| |/  __ _ _ __  _ __  ___   _____ _ __ ___  __ _ _ _ __ ___ 
+#  | |  | |/ _` | __/ _ \  / _` |  / _` | '_ \| '_ \| \ \ / / _ \ '__/ __|/ _` | | '__/ _ \
+#  | |__| | (_| | ||  __/ | (_| | | (_| | | | | | | | |\ V /  __/ |  \__ \ (_| | | | |  __/
+#  |_____/ \__,_|\__\___|  \__,_|  \__,_|_| |_|_| |_|_| \_/ \___|_|  |___/\__,_|_|_|  \___|
+
+# Dictionnaire des anniversaires
+bday_txt = open(os.path.join(os.path.dirname(__file__), "anniversaires_filtrés.txt"), "r", encoding="utf-8")
+bday_read = bday_txt.read()
+bday_txt.close()
+bday_dictionnary = {}
+liste_bday = bday_read.split("\n")
+index_bday = 0
+while index_bday != len(liste_bday):
+    bday_date = liste_bday[index_bday]
+    index_bday+=1
+    bday_name = liste_bday[index_bday]
+    index_bday+=1
+    try:
+        bday_dictionnary[bday_date].append(bday_name)
+    except KeyError:
+        bday_dictionnary[bday_date] = [bday_name]
+
+
+# Envoyer un message pour les anniversaires
+@tasks.loop(hours=24)
+async def anniversaire():
+    ctx = bot.get_channel(969714441400754186)
+    maintenant = dt.datetime.now()
+    date_du_jour = maintenant.strftime("%m%d")
+    if date_du_jour in bday_dictionnary:
+        for bday in bday_dictionnary[date_du_jour]:
+            await ctx.send(bday + " fête son anniversaire !")
+
+@anniversaire.before_loop
+async def before_anniversaire():
+    for didier in range(60*60*24):
+        if dt.datetime.now().hour == 0:
+            print('Les anniversaires arrivent !')
+            return
+        await a.sleep(1)
 
 # À mettre à la toute fin
 token_txt = open(os.path.join(os.path.dirname(__file__), "bot token.txt"), "r", encoding="utf-8")
