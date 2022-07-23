@@ -441,7 +441,7 @@ while index_bday != len(liste_bday):
 # Envoyer un message pour les anniversaires
 @tasks.loop(hours=24)
 async def anniversaire():
-    ctx = bot.get_channel(969714441400754186)
+    ctx = bot.get_channel(1000525423429554337)
     maintenant = dt.datetime.now()
     date_du_jour = maintenant.strftime("%m%d")
     if date_du_jour in bday_dictionnary:
