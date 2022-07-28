@@ -5,7 +5,9 @@ import asyncio as a
 import random
 import os
 import datetime as dt
-
+import multifonction as mf
+from num2words import num2words as n2w
+import emoji
 
 # Le blabla du début
 intents = discord.Intents.default()
@@ -13,6 +15,8 @@ intents.members = True
 bot = commands.Bot(command_prefix="d!", intents=intents)
 # slash = SlashCommand(bot, sync_commands=True)
 bot.channels = []
+bot.queue = []
+# bot.nombre_de_trucs_à_queue = 0
 
 # Début du code
 
@@ -210,6 +214,7 @@ async def set(ctx):
     # Variables de fonction
     def check_message(message):
         return message.author == ctx.author and message.channel == ctx.channel
+
     # Combien d'équipes
     if "thomas-carré" in ctx.channel.name:
         combien = await ctx.send("Ah, là y'a pas d'équipes. Y'en avait combien ?")
@@ -217,7 +222,9 @@ async def set(ctx):
         try:
             nbre_équipes = int(nbre_équipes_message.content)
         except ValueError:
-            troll = await ctx.send("Espèce de petit troll, tu dois recommencer la commande maintenant :face_with_raised_eyebrow:")
+            troll = await ctx.send(
+                "Espèce de petit troll, tu dois recommencer la commande maintenant :face_with_raised_eyebrow:"
+            )
             await a.sleep(5)
             await ctx.message.delete()
             await combien.delete()
@@ -225,9 +232,13 @@ async def set(ctx):
             await troll.delete()
             return
         bot.équipes = nbre_équipes
-        check_pour_troll = discord.utils.get(ctx.message.guild.roles, name="Équipe " + str(bot.équipes))
+        check_pour_troll = discord.utils.get(
+            ctx.message.guild.roles, name="Équipe " + str(bot.équipes)
+        )
         if check_pour_troll == None:
-            troll = await ctx.send("Espèce de petit troll, tu dois recommencer la commande maintenant :face_with_raised_eyebrow:")
+            troll = await ctx.send(
+                "Espèce de petit troll, tu dois recommencer la commande maintenant :face_with_raised_eyebrow:"
+            )
             await a.sleep(5)
             await ctx.message.delete()
             await combien.delete()
@@ -250,10 +261,13 @@ async def arrêts(ctx):
         # Variables de fonction
         def check_message(message):
             return message.author == ctx.author and message.channel == ctx.channel
+
         pas_drôle_check = False
         # Si pas encore d'équipe
         if bot.équipes == 0:
-            faire_r_équipes = await ctx.send(":warning: Attention, il faut définir un nombre d'équipes puis réessayer la commande")
+            faire_r_équipes = await ctx.send(
+                ":warning: Attention, il faut définir un nombre d'équipes puis réessayer la commande"
+            )
             await a.sleep(5)
             await faire_r_équipes.delete()
         # Détermination
@@ -266,7 +280,13 @@ async def arrêts(ctx):
             arrivée = arrivée_message.content
             liste_arrêts = []
             # print(départ, arrivée)
-            read_arrêts_lignes = open(os.path.join(os.path.dirname(__file__), "liste-arrêts-Paris-intramuros.txt"), "r", encoding="utf-8")
+            read_arrêts_lignes = open(
+                os.path.join(
+                    os.path.dirname(__file__), "liste-arrêts-Paris-intramuros.txt"
+                ),
+                "r",
+                encoding="utf-8",
+            )
             for x in read_arrêts_lignes:
                 x = x[:-1]
                 if not départ in x and not arrivée in x:
@@ -283,22 +303,26 @@ async def arrêts(ctx):
                 pas_drôle_check = True
             if cb_arrêt_int >= 2:
                 for roger in range(bot.équipes):
-                    roger +=1
+                    roger += 1
                     for didier in range(cb_arrêt_int):
                         # dict_temp={}
-                        didier+=1
+                        didier += 1
                         while True:
                             arrêt_choisi = "".join(random.choices(liste_arrêts))
                             if arrêt_choisi in liste_arrêts_choisis:
                                 pass
                             else:
                                 liste_arrêts_choisis.append(arrêt_choisi)
-                                channel = discord.utils.get(ctx.guild.channels, name="équipe-" + str(roger))
+                                channel = discord.utils.get(
+                                    ctx.guild.channels, name="équipe-" + str(roger)
+                                )
                                 arrêts_chosis_message = await channel.send(arrêt_choisi)
                                 # dict_temp["arrêts_choisis_message"] = arrêts_chosis_message
                                 # bot.tous_les_résultats[didier] = dict_temp
                                 break
-            arrêts_envoyés = await ctx.send("Vos arrêts imposés ont été envoyés dans vos channels respectifs")
+            arrêts_envoyés = await ctx.send(
+                "Vos arrêts imposés ont été envoyés dans vos channels respectifs"
+            )
             await a.sleep(3)
             await ctx.message.delete()
             await départ_question.delete()
@@ -311,7 +335,6 @@ async def arrêts(ctx):
                 await pas_drôle.delete()
             else:
                 await arrêts_envoyés.delete()
-
 
 
 # Reset
@@ -413,15 +436,19 @@ async def reset(ctx):
         await arabe.delete()
 
 
-#   _____        _             _ _                   _                          _          
-#  |  __ \      | |           | ( )                 (_)                        (_)         
-#  | |  | | __ _| |_ ___    __| |/  __ _ _ __  _ __  ___   _____ _ __ ___  __ _ _ _ __ ___ 
+#   _____        _             _ _                   _                          _
+#  |  __ \      | |           | ( )                 (_)                        (_)
+#  | |  | | __ _| |_ ___    __| |/  __ _ _ __  _ __  ___   _____ _ __ ___  __ _ _ _ __ ___
 #  | |  | |/ _` | __/ _ \  / _` |  / _` | '_ \| '_ \| \ \ / / _ \ '__/ __|/ _` | | '__/ _ \
 #  | |__| | (_| | ||  __/ | (_| | | (_| | | | | | | | |\ V /  __/ |  \__ \ (_| | | | |  __/
 #  |_____/ \__,_|\__\___|  \__,_|  \__,_|_| |_|_| |_|_| \_/ \___|_|  |___/\__,_|_|_|  \___|
 
 # Dictionnaire des anniversaires
-bday_txt = open(os.path.join(os.path.dirname(__file__), "anniversaires_filtrés.txt"), "r", encoding="utf-8")
+bday_txt = open(
+    os.path.join(os.path.dirname(__file__), "anniversaires_filtrés.txt"),
+    "r",
+    encoding="utf-8",
+)
 bday_read = bday_txt.read()
 bday_txt.close()
 bday_dictionnary = {}
@@ -429,9 +456,9 @@ liste_bday = bday_read.split("\n")
 index_bday = 0
 while index_bday != len(liste_bday):
     bday_date = liste_bday[index_bday]
-    index_bday+=1
+    index_bday += 1
     bday_name = liste_bday[index_bday]
-    index_bday+=1
+    index_bday += 1
     try:
         bday_dictionnary[bday_date].append(bday_name)
     except KeyError:
@@ -448,16 +475,132 @@ async def anniversaire():
         for bday in bday_dictionnary[date_du_jour]:
             await ctx.send(bday + " fête son anniversaire !")
 
+
 @anniversaire.before_loop
 async def before_anniversaire():
-    for _ in range(60*60*24):
-        if dt.datetime.now().hour == 0:
-            print('Les anniversaires arrivent !')
+    for _ in range(60 * 60 * 24):
+        if dt.datetime.now().hour == 0 and dt.datetime.now().minute == 0:
+            print("Les anniversaires arrivent !")
             return
         await a.sleep(1)
 
+
+#  __     __      _______    _
+#  \ \   / /     |__   __|  | |
+#   \ \_/ /__  _   _| |_   _| |__   ___
+#    \   / _ \| | | | | | | | '_ \ / _ \
+#     | | (_) | |_| | | |_| | |_) |  __/
+#     |_|\___/ \__,_|_|\__,_|_.__/ \___|
+
+
+# Query l'URL de la vidéo
+@bot.command(name="play")
+@commands.has_role(969725736363622470)
+async def play(ctx, *, nom_ou_url: str):
+    guild = ctx.guild
+    # Check si tu es dans un serveur vocal
+    if ctx.author.voice is None:
+        await ctx.send(":x: Tu n'es pas dans un salon vocal")
+        return
+
+    if "youtube.com/watch?v=" in nom_ou_url or "youtu.be/" in nom_ou_url:
+        lien = mf.get_link(nom_ou_url)
+        bot.queue.append(
+            {
+                "titre": lien["title"],
+                "auteur": lien["uploader"],
+                "url": lien["url"],
+            }
+        )
+
+    else:
+        choix = mf.search(nom_ou_url)
+        for didier in range(len(choix)):
+            if nom_ou_url.lower() in choix[didier]["title"].lower():
+                lien = choix[didier]
+                bot.queue.append(
+                    {
+                        "titre": lien["title"],
+                        "auteur": lien["uploader"],
+                        "url": lien["url"],
+                    }
+                )
+                break
+            else:
+                cb_résultats = await ctx.send(
+                    "J'ai trouvé " + str(len(choix)) + " résultats :"
+                )
+                liste_résultats = []
+                for didier in range(len(choix)):
+                    msg_temp = (
+                        ":"
+                        + n2w(didier + 1)
+                        + ": `"
+                        + choix[didier]["title"]
+                        + "` de `"
+                        + choix[didier]["uploader"]
+                        + "`"
+                    )
+                    liste_résultats.append(msg_temp)
+                liste_résultats_msg = await ctx.send("\n".join(liste_résultats))
+                for didier in range(len(choix)):
+                    await liste_résultats_msg.add_reaction(
+                        emoji.emojize(":" + n2w(didier + 1) + ":", language="alias")
+                    )
+
+                def check_emoji(reaction, user):
+                    return (
+                        ctx.message.author == user
+                        and liste_résultats_msg.id == reaction.message.id
+                        and (
+                            str(reaction.emoji) == "1️⃣"
+                            or str(reaction.emoji) == "2️⃣"
+                            or str(reaction.emoji) == "3️⃣"
+                            or str(reaction.emoji) == "4️⃣"
+                            or str(reaction.emoji) == "5️⃣"
+                        )
+                    )
+
+                reaction, user = await bot.wait_for("reaction_add", check=check_emoji)
+                for didier in range(len(choix)):
+                    if str(reaction.emoji) == emoji.emojize(
+                        ":" + n2w(didier + 1) + ":", language="alias"
+                    ):
+                        lien = choix[didier]
+                        bot.queue.append(
+                            {
+                                "titre": lien["title"],
+                                "auteur": lien["uploader"],
+                                "url": lien["url"],
+                            }
+                        )
+                        break
+                break
+
+    if ctx.voice_client is None:
+        vc = await ctx.author.voice.channel.connect()
+    if ctx.voice_client is not None and ctx.voice_client.is_playing() is False:
+        vc = ctx.voice_client
+    while len(bot.queue) != 0:
+        if ctx.voice_client.is_playing() is True:
+            await a.sleep(1)
+        if ctx.voice_client.is_playing() is False:
+            lien_direct = bot.queue[0]["url"]
+            try:
+                vc
+            except UnboundLocalError:
+                vc = ctx.voice_client
+            finally:
+                vc.play(discord.FFmpegPCMAudio(source=lien_direct))
+                vc.source = discord.PCMVolumeTransformer(vc.source)
+                vc.source.volume = 0.5
+                bot.queue.pop(0)
+
+
 # À mettre à la toute fin
-token_txt = open(os.path.join(os.path.dirname(__file__), "bot token.txt"), "r", encoding="utf-8")
+token_txt = open(
+    os.path.join(os.path.dirname(__file__), "bot_token.txt"), "r", encoding="utf-8"
+)
 token = token_txt.read()
 token_txt.close()
 bot.run(token)
