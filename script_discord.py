@@ -8,6 +8,7 @@ import datetime as dt
 import multifonction as mf
 from num2words import num2words as n2w
 import emoji
+from collections import defaultdict as dd
 
 # Le blabla du début
 intents = discord.Intents.default()
@@ -15,7 +16,7 @@ intents.members = True
 bot = commands.Bot(command_prefix="d!", intents=intents)
 # slash = SlashCommand(bot, sync_commands=True)
 bot.channels = []
-bot.queue = []
+bot.queue = dd(list)
 # bot.nombre_de_trucs_à_queue = 0
 
 # Début du code
@@ -56,8 +57,6 @@ point_par_ligne = {
 async def set_équipes(ctx):
     # Variables de fonction
     guild = ctx.guild
-    print(ctx.message.author)
-    print(type(ctx.message.author))
     ratp_une_équipe = False
     ratp_pas_nombre = False
     # Combien d'équipes jouent
@@ -493,11 +492,12 @@ async def before_anniversaire():
 #     |_|\___/ \__,_|_|\__,_|_.__/ \___|
 
 
-# Query l'URL de la vidéo
+# Jouer une vidéo / l'ajouter dans la queue
 @bot.command(name="play")
 @commands.has_role(969725736363622470)
 async def play(ctx, *, nom_ou_url: str):
     guild = ctx.guild
+    liste_temp_play = []
     # Check si tu es dans un serveur vocal
     if ctx.author.voice is None:
         await ctx.send(":x: Tu n'es pas dans un salon vocal")
@@ -505,20 +505,19 @@ async def play(ctx, *, nom_ou_url: str):
 
     if "youtube.com/watch?v=" in nom_ou_url or "youtu.be/" in nom_ou_url:
         lien = mf.get_link(nom_ou_url)
-        bot.queue.append(
+        bot.queue[guild.id].append(
             {
                 "titre": lien["title"],
                 "auteur": lien["uploader"],
                 "url": lien["url"],
             }
         )
-
     else:
         choix = mf.search(nom_ou_url)
         for didier in range(len(choix)):
             if nom_ou_url.lower() in choix[didier]["title"].lower():
                 lien = choix[didier]
-                bot.queue.append(
+                bot.queue[guild.id].append(
                     {
                         "titre": lien["title"],
                         "auteur": lien["uploader"],
@@ -567,7 +566,7 @@ async def play(ctx, *, nom_ou_url: str):
                         ":" + n2w(didier + 1) + ":", language="alias"
                     ):
                         lien = choix[didier]
-                        bot.queue.append(
+                        bot.queue[guild.id].append(
                             {
                                 "titre": lien["title"],
                                 "auteur": lien["uploader"],
@@ -582,10 +581,16 @@ async def play(ctx, *, nom_ou_url: str):
     if ctx.voice_client is not None and ctx.voice_client.is_playing() is False:
         vc = ctx.voice_client
     while len(bot.queue) != 0:
-        if ctx.voice_client.is_playing() is True:
+        if (
+            ctx.voice_client.is_playing() is True
+            or ctx.voice_client.is_paused() is True
+        ):
             await a.sleep(1)
-        if ctx.voice_client.is_playing() is False:
-            lien_direct = bot.queue[0]["url"]
+        if (
+            ctx.voice_client.is_playing() is False
+            and ctx.voice_client.is_paused() is False
+        ):
+            lien_direct = bot.queue[guild.id][0]["url"]
             try:
                 vc
             except UnboundLocalError:
@@ -594,7 +599,111 @@ async def play(ctx, *, nom_ou_url: str):
                 vc.play(discord.FFmpegPCMAudio(source=lien_direct))
                 vc.source = discord.PCMVolumeTransformer(vc.source)
                 vc.source.volume = 0.5
-                bot.queue.pop(0)
+                # embed=discord.Embed(description="Je joue `" + bot.queue[guild.id][0]["titre"] + "` de `" + bot.queue[guild.id][0]["auteur"] + "`")
+                # await ctx.send(embed=embed)
+                await ctx.send(
+                    ":play_pause: Je joue `"
+                    + bot.queue[guild.id][0]["titre"]
+                    + "` de `"
+                    + bot.queue[guild.id][0]["auteur"]
+                    + "`"
+                )
+                bot.queue[guild.id].pop(0)
+
+
+@bot.command(aliases=["pause", "stop"])
+@commands.has_role(969725736363622470)
+async def mettre_en_pause(ctx):
+    se_joue = ctx.voice_client.is_playing()
+    mis_en_pause = ctx.voice_client.is_paused()
+    if mis_en_pause != True:
+        ctx.voice_client.pause()
+        await ctx.send(":pause_button: `J'ai mis en pause la lecture`")
+    else:
+        if se_joue == True:
+            await ctx.send("`Je l'ai déjà mis en pause`")
+        else:
+            await ctx.send("`Rien n'est joué pour le moment`")
+
+
+@bot.command(aliases=["reprendre", "unpause", "resume"])
+@commands.has_role(969725736363622470)
+async def reprendre_la_lecture(ctx):
+    mis_en_pause = ctx.voice_client.is_paused()
+    if mis_en_pause == True:
+        ctx.voice_client.resume()
+        await ctx.send(":play_pause: `J'ai repris la lecture`")
+    else:
+        await ctx.send("`La lecture n'est pas en pause`")
+
+
+@bot.command(name="skip")
+@commands.has_role(969725736363622470)
+async def skip(ctx):
+    ctx.voice_client.stop()
+    ctx.voice_client.play()
+
+
+@bot.command(name="queue")
+@commands.has_role(969725736363622470)
+async def queue(ctx):
+    guild = ctx.guild
+    if len(bot.queue[guild.id]) == 0:
+        await ctx.send(
+            embed=discord.Embed(title="Queue", description="La queue est vide")
+        )
+    else:
+        liste_queue = []
+        for didier in range(len(bot.queue[guild.id])):
+            liste_queue.append(
+                emoji.emojize(":" + n2w(str(didier)) + ":", language="alias")
+                + " - `"
+                + bot.queue[guild.id][didier]["titre"]
+                + "` de `"
+                + bot.queue[guild.id][didier]["auteur"]
+                + "`"
+            )
+        embed = discord.Embed(title="Queue", description="\n".join(liste_queue))
+        await ctx.send(embed=embed)
+
+
+@bot.command(name="q_remove")
+@commands.has_role(969725736363622470)
+async def queue_remove(ctx, position: str):
+    vraie_position = int(position)
+    guild = ctx.guild
+    if len(bot.queue[guild.id]) == 0:
+        await ctx.send(
+            embed=discord.Embed(
+                title="Queue vide",
+                description="La queue est vide, impossible de supprimer quoi que ce soit",
+            )
+        )
+    else:
+        bot.queue[guild.id].pop(vraie_position - 1)
+        liste_queue = []
+        for didier in range(len(bot.queue[guild.id])):
+            liste_queue.append(
+                emoji.emojize(":" + n2w(str(didier)) + ":", language="alias")
+                + " - `"
+                + bot.queue[guild.id][didier]["titre"]
+                + "` de `"
+                + bot.queue[guild.id][didier]["auteur"]
+                + "`"
+            )
+        if len(liste_queue) == 0:
+            embed = discord.Embed(
+                title="Queue", description="La queue est maintenant vide"
+            )
+        else:
+            embed = discord.Embed(
+                title="Queue",
+                description="J'ai retiré la chanson à la position "
+                + position
+                + "\nVoici la nouvelle queue"
+                + "\n".join(liste_queue),
+            )
+        await ctx.send(embed=embed)
 
 
 # À mettre à la toute fin
